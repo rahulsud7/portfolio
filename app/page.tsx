@@ -44,7 +44,6 @@ export default function Portfolio() {
   useGSAP(() => {
     if (isLoading) return;
 
-    // Refresh to guarantee accurate DOM measurements
     ScrollTrigger.refresh();
 
     // 1. GENTLE PARALLAX HERO
@@ -70,53 +69,46 @@ export default function Portfolio() {
       }
     });
 
-   // 2. FINAL HORIZONTAL SCROLL FIX (VERCEL + LOCAL SAFE)
-const wrapper = horizontalRef.current;
-const content = scrollContentRef.current;
+    // 2. FINAL HORIZONTAL SCROLL FIX (DYNAMIC RECALCULATION)
+    const wrapper = horizontalRef.current;
+    const content = scrollContentRef.current;
 
-if (wrapper && content) {
-  const images = content.querySelectorAll("img");
+    if (wrapper && content) {
+      // Use a function-based value so GSAP recalculates on resize/mobile rotation
+      const getScrollAmount = () => -(content.scrollWidth - window.innerWidth);
 
-  const initScroll = () => {
-    const totalWidth = content.scrollWidth;
-    const scrollDistance = totalWidth - window.innerWidth;
+      gsap.to(content, {
+        x: getScrollAmount, // Function callback, not a static number
+        ease: "none",
+        scrollTrigger: {
+          trigger: wrapper,
+          pin: true,
+          scrub: 1,
+          start: "top top",
+          end: () => `+=${content.scrollWidth - window.innerWidth}`, // Recalculates end point dynamically
+          invalidateOnRefresh: true, // Forces recalculation of function-based values on resize
+          anticipatePin: 1,
+        },
+      });
 
-    gsap.to(content, {
-      x: -scrollDistance,
-      ease: "none",
-      scrollTrigger: {
-        trigger: wrapper,
-        pin: true,
-        scrub: 1,
-        start: "top top",
-        end: `+=${scrollDistance}`,
-        invalidateOnRefresh: true,
-        anticipatePin: 1,
-      },
-    });
+      // Guarantee perfect alignment once images fully load
+      const images = content.querySelectorAll("img");
+      let loaded = 0;
 
-    ScrollTrigger.refresh();
-  };
-
-  // 🚨 Wait for images (THIS is what was breaking it)
-  let loaded = 0;
-
-  if (images.length === 0) {
-    initScroll();
-  } else {
-    images.forEach((img) => {
-      if (img.complete) {
-        loaded++;
-        if (loaded === images.length) initScroll();
-      } else {
-        img.onload = () => {
-          loaded++;
-          if (loaded === images.length) initScroll();
-        };
+      if (images.length > 0) {
+        images.forEach((img) => {
+          if (img.complete) {
+            loaded++;
+            if (loaded === images.length) ScrollTrigger.refresh();
+          } else {
+            img.onload = () => {
+              loaded++;
+              if (loaded === images.length) ScrollTrigger.refresh();
+            };
+          }
+        });
       }
-    });
-  }
-}
+    }
 
     // 3. EDITORIAL TEXT REVEALS
     gsap.utils.toArray(".reveal-text").forEach((el: any) => {
@@ -147,16 +139,16 @@ if (wrapper && content) {
 
       <main ref={container} className="bg-[#030303] text-[#E5E5E5] selection:bg-[#E5E5E5] selection:text-[#030303] overflow-x-hidden font-sans">
         
-        {/* EDITORIAL NAVIGATION */}
-        <nav className="fixed top-0 w-full p-8 md:p-12 flex justify-between items-start z-[100] mix-blend-difference">
+        {/* EDITORIAL NAVIGATION - Added gap responsive adjustments */}
+        <nav className="fixed top-0 w-full p-6 md:p-12 flex flex-col md:flex-row justify-between items-start md:items-center z-[100] mix-blend-difference gap-4 md:gap-0">
           <div className="flex flex-col gap-1">
             <span className="text-sm font-bold tracking-tight">YUVRAJ RANA</span>
             <span className="text-[10px] uppercase tracking-[0.2em] opacity-50">Studio Archive</span>
           </div>
-          <div className="flex gap-10 text-[10px] uppercase tracking-[0.3em] font-medium mt-1">
+          <div className="flex gap-6 md:gap-10 text-[10px] uppercase tracking-[0.3em] font-medium mt-1">
             <a href="#about" className="hover:opacity-50 transition-opacity">Philosophy</a>
             <a href="#work" className="hover:opacity-50 transition-opacity">Selected Works</a>
-            <a href="#contact" className="hover:opacity-50 transition-opacity">Inquiries</a>
+            <a href="#contact" className="hover:opacity-50 transition-opacity hidden sm:block">Inquiries</a>
           </div>
         </nav>
 
@@ -183,29 +175,29 @@ if (wrapper && content) {
             </h1>
           </div>
 
-          <div className="absolute bottom-10 left-8 md:left-12 hero-text">
+          <div className="absolute bottom-10 left-6 md:left-12 hero-text">
              <p className="text-[10px] uppercase tracking-[0.4em] opacity-40">Est. 2026 // Global</p>
           </div>
         </section>
 
-        {/* PHILOSOPHY - YK PRODUCE VIBE (High Whitespace) */}
-        <section id="about" className="py-40 md:py-60 px-[8vw] md:px-[15vw] relative z-10">
+        {/* PHILOSOPHY */}
+        <section id="about" className="py-24 md:py-60 px-[6vw] md:px-[15vw] relative z-10">
             <div className="max-w-5xl">
-                <p className="text-[10px] uppercase tracking-[0.5em] text-white/30 mb-16 font-medium reveal-text">
+                <p className="text-[10px] uppercase tracking-[0.5em] text-white/30 mb-8 md:mb-16 font-medium reveal-text">
                     [ 01 — The Approach ]
                 </p>
-                <h2 className="text-4xl md:text-6xl lg:text-7xl font-normal leading-[1.1] tracking-tight reveal-text text-[#E5E5E5]">
+                <h2 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-normal leading-[1.1] tracking-tight reveal-text text-[#E5E5E5]">
                     Photography is an act of <span className="italic font-light">subtraction</span>. We remove the noise to reveal the narrative.
                 </h2>
                 
-                <div className="mt-32 grid md:grid-cols-12 gap-12">
+                <div className="mt-20 md:mt-32 grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12">
                     <div className="md:col-span-5 reveal-text">
                         <p className="text-xs uppercase tracking-widest text-white/40 leading-loose border-l border-white/10 pl-6">
                             Chandigarh<br />Mumbai<br />Worldwide
                         </p>
                     </div>
                     <div className="md:col-span-7 reveal-text text-sm md:text-base text-white/60 leading-relaxed font-light">
-                        <p className="mb-8">
+                        <p className="mb-6 md:mb-8">
                             Based in India, Yuvraj Rana Studio specializes in high-contrast, atmospheric visual storytelling. 
                             From the visceral energy of a Grand Prix to the profound silence of a portrait, our work is defined by precision and emotion.
                         </p>
@@ -218,23 +210,22 @@ if (wrapper && content) {
         </section>
 
         {/* BULLETPROOF HORIZONTAL GALLERY */}
-        {/* NOTE: w-max and shrink-0 are the keys to stopping the scroll from breaking */}
         <section ref={horizontalRef} id="work" className="h-screen flex items-center overflow-hidden bg-[#030303] border-y border-white/5">
-          <div ref={scrollContentRef} className="flex h-[70vh] items-center px-[8vw] md:px-[15vw] w-max">
+          <div ref={scrollContentRef} className="flex h-[60vh] md:h-[70vh] items-center px-[6vw] md:px-[15vw] w-max">
             
             {/* Intro Block */}
-            <div className="w-[80vw] md:w-[35vw] shrink-0 flex flex-col justify-center pr-20">
-                <p className="text-[10px] uppercase tracking-[0.5em] text-white/30 mb-8 font-medium">
+            <div className="w-[85vw] md:w-[35vw] shrink-0 flex flex-col justify-center pr-10 md:pr-20">
+                <p className="text-[10px] uppercase tracking-[0.5em] text-white/30 mb-6 md:mb-8 font-medium">
                     [ 02 — Archive ]
                 </p>
-                <h3 className="text-6xl md:text-8xl font-normal tracking-tighter leading-none italic">
+                <h3 className="text-5xl md:text-8xl font-normal tracking-tighter leading-none italic">
                     Selected<br />Works.
                 </h3>
             </div>
             
             {/* Cards */}
             {CATEGORIES.map((cat, i) => (
-              <div key={i} className="group relative w-[85vw] md:w-[40vw] h-full shrink-0 mr-8 md:mr-16 bg-[#0A0A0A] overflow-hidden cursor-pointer">
+              <div key={i} className="group relative w-[80vw] md:w-[40vw] h-full shrink-0 mr-6 md:mr-16 bg-[#0A0A0A] overflow-hidden cursor-pointer">
                 <img 
                     src={cat.img} 
                     className="w-full h-full object-cover grayscale brightness-[0.5] group-hover:grayscale-0 group-hover:brightness-100 group-hover:scale-105 transition-all duration-1000 ease-[cubic-bezier(0.25,1,0.5,1)]" 
@@ -242,17 +233,17 @@ if (wrapper && content) {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 group-hover:opacity-40 transition-opacity duration-1000" />
                 
-                <div className="absolute bottom-8 left-8 right-8 flex justify-between items-end">
+                <div className="absolute bottom-6 md:bottom-8 left-6 md:left-8 right-6 md:right-8 flex justify-between items-end">
                     <div className="overflow-hidden">
-                        <span className="text-[9px] text-white/40 mb-3 block tracking-[0.3em] uppercase translate-y-full group-hover:translate-y-0 transition-transform duration-500">
+                        <span className="text-[9px] text-white/40 mb-2 md:mb-3 block tracking-[0.3em] uppercase md:translate-y-full group-hover:translate-y-0 transition-transform duration-500">
                             {cat.subtitle} — 0{i + 1}
                         </span>
-                        <h4 className="text-3xl md:text-4xl font-normal tracking-tighter uppercase text-white">
+                        <h4 className="text-2xl md:text-4xl font-normal tracking-tighter uppercase text-white">
                             {cat.title}
                         </h4>
                     </div>
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform translate-x-4 group-hover:translate-x-0">
-                        <ArrowUpRight size={28} strokeWidth={1} className="text-white" />
+                    <div className="md:opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform md:translate-x-4 group-hover:translate-x-0">
+                        <ArrowUpRight size={24} strokeWidth={1} className="text-white md:w-7 md:h-7" />
                     </div>
                 </div>
               </div>
@@ -261,22 +252,22 @@ if (wrapper && content) {
         </section>
 
         {/* EDITORIAL REVEAL SECTION */}
-        <section className="py-40 md:py-60 px-[8vw] md:px-[15vw]">
-            <div className="grid md:grid-cols-2 gap-20 items-center">
-                <div className="aspect-[3/4] overflow-hidden">
+        <section className="py-24 md:py-60 px-[6vw] md:px-[15vw]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
+                <div className="aspect-[3/4] overflow-hidden order-2 md:order-1">
                     <img 
                         src="https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?q=80&w=2500" 
                         className="w-full h-full object-cover grayscale brightness-50 reveal-text"
                     />
                 </div>
-                <div className="flex flex-col justify-center">
-                    <p className="text-[10px] uppercase tracking-[0.5em] text-white/30 mb-10 font-medium reveal-text">
+                <div className="flex flex-col justify-center order-1 md:order-2">
+                    <p className="text-[10px] uppercase tracking-[0.5em] text-white/30 mb-6 md:mb-10 font-medium reveal-text">
                         [ 03 — The Aesthetic ]
                     </p>
-                    <h2 className="text-5xl md:text-6xl lg:text-7xl font-normal tracking-tighter leading-[1] reveal-text italic">
+                    <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-normal tracking-tighter leading-[1] reveal-text italic">
                         Shadows <br />speak louder <br />than light.
                     </h2>
-                    <p className="mt-12 text-sm text-white/50 leading-relaxed font-light reveal-text max-w-sm">
+                    <p className="mt-8 md:mt-12 text-sm text-white/50 leading-relaxed font-light reveal-text max-w-sm">
                         True mastery of the lens isn't about illuminating the subject; it's about carefully curating the darkness that surrounds it.
                     </p>
                 </div>
@@ -284,25 +275,25 @@ if (wrapper && content) {
         </section>
 
         {/* HIGH-END CONTACT PAGE */}
-        <footer id="contact" className="bg-[#E5E5E5] text-[#030303] pt-40 pb-12 px-[8vw] md:px-[12vw] flex flex-col justify-between min-h-screen">
+        <footer id="contact" className="bg-[#E5E5E5] text-[#030303] pt-32 md:pt-40 pb-12 px-[6vw] md:px-[12vw] flex flex-col justify-between min-h-[80vh] md:min-h-screen">
           
           <div>
-            <p className="text-[10px] uppercase tracking-[0.5em] text-black/40 mb-12 font-medium">
+            <p className="text-[10px] uppercase tracking-[0.5em] text-black/40 mb-8 md:mb-12 font-medium">
                 [ 04 — Inquiries ]
             </p>
-            <h2 className="text-[14vw] md:text-[12vw] font-black leading-[0.8] tracking-tighter uppercase">
+            <h2 className="text-[16vw] md:text-[12vw] font-black leading-[0.8] tracking-tighter uppercase">
                 LET'S
             </h2>
-            <h2 className="text-[14vw] md:text-[12vw] font-black leading-[0.8] tracking-tighter uppercase italic opacity-40 hover:opacity-100 transition-opacity duration-500 cursor-pointer">
+            <h2 className="text-[16vw] md:text-[12vw] font-black leading-[0.8] tracking-tighter uppercase italic opacity-40 hover:opacity-100 transition-opacity duration-500 cursor-pointer">
                 CREATE.
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-16 md:gap-8 border-t border-black/10 pt-16 mt-20">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8 border-t border-black/10 pt-12 md:pt-16 mt-16 md:mt-20">
             
             <div className="md:col-span-5 space-y-4">
                 <p className="text-[9px] uppercase tracking-[0.4em] text-black/40 font-bold">Direct Communication</p>
-                <a href="mailto:yuvraj@rana.studio" className="text-2xl md:text-3xl lg:text-4xl font-normal tracking-tighter hover:italic transition-all duration-300 block break-words border-b border-black pb-2 inline-block">
+                <a href="mailto:yuvraj@rana.studio" className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-normal tracking-tighter hover:italic transition-all duration-300 block break-words border-b border-black pb-2 inline-block">
                     yuvraj@rana.studio
                 </a>
             </div>
